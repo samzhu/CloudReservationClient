@@ -11,7 +11,7 @@ import org.springframework.cloud.client.circuitbreaker.EnableCircuitBreaker;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.client.loadbalancer.LoadBalanced;
 import org.springframework.cloud.netflix.zuul.EnableZuulProxy;
-import org.springframework.cloud.sleuth.sampler.AlwaysSampler;
+//import org.springframework.cloud.sleuth.sampler.AlwaysSampler;
 import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.cloud.stream.annotation.Output;
 import org.springframework.cloud.stream.messaging.Source;
@@ -31,16 +31,16 @@ import org.springframework.web.client.RestTemplate;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 
 @EnableZuulProxy
-@EnableBinding(Source.class)
+//@EnableBinding(Source.class)
 @EnableCircuitBreaker
 @EnableDiscoveryClient
 @SpringBootApplication
 public class ReservationClientApplication {
 	
-	@Bean
-	AlwaysSampler alwaysSampler(){
-		return new AlwaysSampler();
-	}
+//	@Bean
+//	AlwaysSampler alwaysSampler(){
+//		return new AlwaysSampler();
+//	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(ReservationClientApplication.class, args);
@@ -55,14 +55,14 @@ class ReservationApiGatewayRestController{
 	@LoadBalanced
 	private RestTemplate restTemplate;
 	
-	@Autowired
-	@Output(Source.OUTPUT)
-	private MessageChannel messageChannel;
+//	@Autowired
+//	@Output(Source.OUTPUT)
+//	private MessageChannel messageChannel;
 	
-	@RequestMapping( method = RequestMethod.POST)
-	public void write(@RequestBody Reservation r){
-		this.messageChannel.send(MessageBuilder.withPayload(r.getReservationName()).build());
-	}
+//	@RequestMapping( method = RequestMethod.POST)
+//	public void write(@RequestBody Reservation r){
+//		this.messageChannel.send(MessageBuilder.withPayload(r.getReservationName()).build());
+//	}
 	
 	public Collection<String> getReservationNamesFallback(){
 		return Collections.emptyList();
@@ -70,24 +70,45 @@ class ReservationApiGatewayRestController{
 	
 	@HystrixCommand(fallbackMethod = "getReservationNamesFallback")
 	@RequestMapping("names")
-	public Collection<String> getReservationNames(){
+    public Collection<String> getReservationNames(){
 
-		ParameterizedTypeReference<Resources<Reservation>> ptr = 
-				new ParameterizedTypeReference<Resources<Reservation>>(){};
+        ParameterizedTypeReference<Resources<Reservation>> ptr = 
+                new ParameterizedTypeReference<Resources<Reservation>>(){};
 
-				ResponseEntity<Resources<Reservation>> responseEntity = 
-						this.restTemplate.exchange("http://reservation-service/reservations", 
-								HttpMethod.GET, null, ptr);
-				
-				Collection<String> nameList = responseEntity
-						.getBody()
-						.getContent()
-						.stream()
-						.map(Reservation::getReservationName)
-						.collect(Collectors.toList());
+                ResponseEntity<Resources<Reservation>> responseEntity = 
+                        this.restTemplate.exchange("http://reservation-service/reservations", 
+                                HttpMethod.GET, null, ptr);
+                
+                Collection<String> nameList = responseEntity
+                        .getBody()
+                        .getContent()
+                        .stream()
+                        .map(Reservation::getReservationName)
+                        .collect(Collectors.toList());
 
-				return nameList;
-	}
+                return nameList;
+    }
+	
+//	@HystrixCommand(fallbackMethod = "getReservationNamesFallback")
+//	@RequestMapping("names")
+//	public Collection<String> getReservationNames(){
+//
+//		ParameterizedTypeReference<Resources<Reservation>> ptr = 
+//				new ParameterizedTypeReference<Resources<Reservation>>(){};
+//
+//				ResponseEntity<Resources<Reservation>> responseEntity = 
+//						this.restTemplate.exchange("http://reservation-service/reservations", 
+//								HttpMethod.GET, null, ptr);
+//				
+//				Collection<String> nameList = responseEntity
+//						.getBody()
+//						.getContent()
+//						.stream()
+//						.map(Reservation::getReservationName)
+//						.collect(Collectors.toList());
+//
+//				return nameList;
+//	}
 }
 
 class Reservation{
