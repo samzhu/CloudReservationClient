@@ -37,11 +37,12 @@ dependencies {
 	compile 'org.springframework.cloud:spring-cloud-starter-ribbon:1.1.4.RELEASE'
 
 	compile("org.springframework.cloud:spring-cloud-starter-hystrix:${springCloudVersion}")
-
+	compile("org.springframework.cloud:spring-cloud-starter-zuul:${springCloudVersion}")
+	compile 'org.springframework.cloud:spring-cloud-starter-stream-redis:1.0.0.RELEASE'
 	/*
     compile('org.springframework.cloud:spring-cloud-starter-zipkin:${springCloudVersion}')
-    compile 'org.springframework.cloud:spring-cloud-starter-stream-redis:1.0.0.RELEASE'
-    compile('org.springframework.cloud:spring-cloud-starter-zuul:${springCloudVersion}')
+
+
     */
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

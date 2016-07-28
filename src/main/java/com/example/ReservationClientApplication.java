@@ -42,131 +42,97 @@ import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 @EnableDiscoveryClient
 @SpringBootApplication
 public class ReservationClientApplication {
-	
-	
-//	@Bean
+
+
+    //	@Bean
 //	AlwaysSampler alwaysSampler(){
 //		return new AlwaysSampler();
 //	}
-	
-	@Bean
+    @LoadBalanced
+    @Bean
+    RestTemplate restTemplate() {
+        return new RestTemplate();
+    }
+
+    @Bean
     CommandLineRunner dc(DiscoveryClient dc) {
-		return args -> dc.getInstances("reservation-service")
+        return args -> dc.getInstances("reservation-service")
                 .forEach(si -> System.out.println(String.format("%s %s:%s", si.getServiceId(), si.getHost(), si.getPort())));
     }
 
-	public static void main(String[] args) {
-		SpringApplication.run(ReservationClientApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(ReservationClientApplication.class, args);
+    }
 }
 
 @RestController
 @RequestMapping("/reservations")
-class ReservationApiGatewayRestController{
+class ReservationApiGatewayRestController {
 
-	@Autowired
-	@LoadBalanced
-	private RestTemplate restTemplate;
-	
-	@Autowired
-	private LoadBalancerClient loadBalancer;
-	
-	// @Autowired
-	 //private DiscoveryClient discoveryClient;
-	
-//	@Autowired
-//	@Output(Source.OUTPUT)
-//	private MessageChannel messageChannel;
-	
-//	@RequestMapping( method = RequestMethod.POST)
-//	public void write(@RequestBody Reservation r){
-//		this.messageChannel.send(MessageBuilder.withPayload(r.getReservationName()).build());
-//	}
-	
-	public Collection<String> getReservationNamesFallback(){
-		return Collections.emptyList();
-	}
-	
-	@HystrixCommand(fallbackMethod = "getReservationNamesFallback")
-	@RequestMapping("names")
-    public Collection<String> getReservationNames(){
-		
-		ServiceInstance instance = loadBalancer.choose("reservation-service");
-		//instance.getUri().get
-		URI serviceUri = URI.create(String.format("http://%s:%s", instance.getHost(),instance.getPort()));
-		
-		System.out.println(String.format("http://%s:%s", instance.getHost(),instance.getPort()));
+    @Autowired
+    private RestTemplate restTemplate;
 
-        ParameterizedTypeReference<Resources<Reservation>> ptr = 
-                new ParameterizedTypeReference<Resources<Reservation>>(){};
-                
-                ResponseEntity<Resources<Reservation>> responseEntity = 
-                		this.restTemplate.exchange("http://reservation-service/reservations", 
-                                HttpMethod.GET, null, ptr);
-                
-                Collection<String> nameList = responseEntity
-                        .getBody()
-                        .getContent()
-                        .stream()
-                        .map(Reservation::getReservationName)
-                        .collect(Collectors.toList());
+    @RequestMapping("names")
+    @HystrixCommand(fallbackMethod = "getReservationNamesFallback")
+    public Collection<String> getReservationNames() {
 
-                return nameList;
+        ParameterizedTypeReference<Resources<Reservation>> ptr =
+                new ParameterizedTypeReference<Resources<Reservation>>() {
+                };
 
+        ResponseEntity<Resources<Reservation>> responseEntity =
+                this.restTemplate.exchange("http://reservation-service/reservations",
+                        HttpMethod.GET, null, ptr);
+
+        Collection<String> nameList = responseEntity
+                .getBody()
+                .getContent()
+                .stream()
+                .map(Reservation::getReservationName)
+                .collect(Collectors.toList());
+
+        return nameList;
     }
-	
-	//@HystrixCommand(fallbackMethod = "getReservationNamesFallback")
-	@RequestMapping("message")
-    public String getmessage(){
 
-        ParameterizedTypeReference<Resources<Reservation>> ptr = 
-                new ParameterizedTypeReference<Resources<Reservation>>(){};
-                
-                ResponseEntity<Resources<Reservation>> responseEntity = 
-                		this.restTemplate.exchange("http://reservation-service/message", 
-                                HttpMethod.GET, null, ptr);
-
-                return responseEntity.getBody().toString();
-
+    public Collection<String> getReservationNamesFallback(){
+        return Collections.emptyList();
     }
-	
-//	@HystrixCommand(fallbackMethod = "getReservationNamesFallback")
-//	@RequestMapping("names")
-//	public Collection<String> getReservationNames(){
-//
-//		ParameterizedTypeReference<Resources<Reservation>> ptr = 
-//				new ParameterizedTypeReference<Resources<Reservation>>(){};
-//
-//				ResponseEntity<Resources<Reservation>> responseEntity = 
-//						this.restTemplate.exchange("http://reservation-service/reservations", 
-//								HttpMethod.GET, null, ptr);
-//				
-//				Collection<String> nameList = responseEntity
-//						.getBody()
-//						.getContent()
-//						.stream()
-//						.map(Reservation::getReservationName)
-//						.collect(Collectors.toList());
-//
-//				return nameList;
-//	}
+
+    @RequestMapping("test")
+    public String getTest() {
+
+        ParameterizedTypeReference<String> ptr =
+                new ParameterizedTypeReference<String>() {
+                };
+
+        ResponseEntity<String> responseEntity =
+                this.restTemplate.exchange("http://reservation-service/api/message",
+                        HttpMethod.GET, null, ptr);
+
+       return responseEntity.getBody().toString();
+    }
 }
 
-class Reservation{
-	private Long id;
-	private String reservationName;
-	public Reservation(){}
-	public Long getId() {
-		return id;
-	}
-	public String getReservationName() {
-		return reservationName;
-	}
-	@Override
-	public String toString() {
-		StringBuilder sb = new StringBuilder("Reservation{");
-		sb.append("id=").append(id);
-		sb.append(", reservationName='").append(reservationName).append("'}");
-		return sb.toString();
-	}
+class Reservation {
+    private Long id;
+    private String reservationName;
+
+    public Reservation() {
+    }
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getReservationName() {
+        return reservationName;
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder("Reservation{");
+        sb.append("id=").append(id);
+        sb.append(", reservationName='").append(reservationName).append("'}");
+        return sb.toString();
+    }
 }
